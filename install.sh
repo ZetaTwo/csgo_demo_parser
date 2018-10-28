@@ -17,3 +17,6 @@ sudo apt-get update
 sudo apt-get install kaitai-struct-compiler
 sudo -H pip install kaitaistruct
 gem install kaitai-struct-visualizer
+
+# Install Kaitai common library
+git clone https://github.com/kaitai-io/kaitai_struct_formats.git
