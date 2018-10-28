@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from protobuf_parser import cstrike15_usermessages_public_pb2, netmessages_public_pb2
+#from protobuf_parser.cstrike15_usermessages_public_pb2 import
+from protobuf_parser.netmessages_public_pb2 import *
 from google.protobuf.internal.decoder import _DecodeVarint32
 
 from kaitai_parser.dem import Dem
@@ -21,11 +22,18 @@ print('Frames: %d' % g.header.frames)
 print('Sign-on length: %d' % g.header.signon_length)
 
 
+message_types = {
+    'net_Tick': CNETMsg_Tick,
+    #'svc_UpdateStringTable': CSVCMsg_UpdateStringTable,
+    'svc_PacketEntities': CSVCMsg_PacketEntities,
+}
+#CNETMsg_Tick
+
 def get_message_type(msg_type):
-    if msg_type in netmessages_public_pb2.NET_Messages.values():
-        return netmessages_public_pb2.NET_Messages.Name(msg_type)
-    elif msg_type in netmessages_public_pb2.SVC_Messages.values():
-        return netmessages_public_pb2.SVC_Messages.Name(msg_type)
+    if msg_type in NET_Messages.values():
+        return NET_Messages.Name(msg_type)
+    elif msg_type in SVC_Messages.values():
+        return SVC_Messages.Name(msg_type)
     else:
         return 'net_???'
 
@@ -33,12 +41,19 @@ def get_message_type(msg_type):
 def parse_inner_packet(inner_body):
     n = 0
     while n < len(inner_body):
-        msg_type, n = _DecodeVarint32(inner_body, n)
+        msg, n = _DecodeVarint32(inner_body, n)
         length, n = _DecodeVarint32(inner_body, n)
-        msg_type_name = get_message_type(msg_type)
-        print('CMD: %d = %s' % (msg_type, msg_type_name))
+        msg_type_name = get_message_type(msg)
+        print('CMD: %d = %s' % (msg, msg_type_name))
         msg_body = inner_body[n:n+length]
-        print(msg_body.encode('hex'))
+        #print(msg_body.encode('hex'))
+
+        if msg_type_name in message_types:
+            msg_type = message_types[msg_type_name]()
+            msg_type.ParseFromString(msg_body)
+            print('[Frame::Packet::%s]' % msg_type_name)
+            print(msg_type)
+
         n += length
         
 
