@@ -23,3 +23,7 @@ Run compile.sh or perform the equivalent actions:
 
 For example of how to use this, check the demo content dumper in parser.py
 Basically, you parse the demo file with the Kaitai parser and then use the protobuf varint decoder to iterate over (type,size) pairs of frame.body.inner_packet and then parse those chunks with the protobuf parsers.
+
+## License
+
+This is Licensed under MIT but I would be very happy if you told me about any project you use this in.
