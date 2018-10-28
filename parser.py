@@ -22,42 +22,41 @@ print('Frames: %d' % g.header.frames)
 print('Sign-on length: %d' % g.header.signon_length)
 
 
-message_types = {
-    'net_Tick': CNETMsg_Tick,
-    #'svc_UpdateStringTable': CSVCMsg_UpdateStringTable,
-    'svc_PacketEntities': CSVCMsg_PacketEntities,
+message_type_prefixes = {
+    'svc': 'CSVCMsg',
+    'net': 'CNETMsg',
 }
-#CNETMsg_Tick
 
-def get_message_type(msg_type):
-    if msg_type in NET_Messages.values():
-        return NET_Messages.Name(msg_type)
-    elif msg_type in SVC_Messages.values():
-        return SVC_Messages.Name(msg_type)
+def get_message_type(msg_type_name):
+    prefix, name = msg_type_name.split('_', 2)
+    msg_real_type_name = '%s_%s' % (message_type_prefixes[prefix], name)
+    return getattr(sys.modules[__name__], msg_real_type_name)
+
+def get_message_type_name(msg_type_id):
+    if msg_type_id in NET_Messages.values():
+        return NET_Messages.Name(msg_type_id)
+    elif msg_type_id in SVC_Messages.values():
+        return SVC_Messages.Name(msg_type_id)
     else:
-        return 'net_???'
+        return False
 
 
-def parse_inner_packet(inner_body):
-    n = 0
-    while n < len(inner_body):
-        msg, n = _DecodeVarint32(inner_body, n)
-        length, n = _DecodeVarint32(inner_body, n)
-        msg_type_name = get_message_type(msg)
-        print('CMD: %d = %s' % (msg, msg_type_name))
-        msg_body = inner_body[n:n+length]
-        #print(msg_body.encode('hex'))
-
-        if msg_type_name in message_types:
-            msg_type = message_types[msg_type_name]()
-            msg_type.ParseFromString(msg_body)
-            print('[Frame::Packet::%s]' % msg_type_name)
+def parse_messages(messages):
+    for m in messages:
+        msg_type_id = m.msg_type_id.value
+        msg_type_name = get_message_type_name(msg_type_id)
+        if not msg_type_name:
+            print('[Frame::Packet::Message::???]')
+            print('ID: %d' % msg_type_id)
+        else:
+            msg_type = get_message_type(msg_type_name)()
+            msg_type.ParseFromString(m.body)
+            print('[Frame::Packet::Message::%s]' % msg_type_name)
             print(msg_type)
-
-        n += length
 
 def vector_to_str(vec):
     return '(%f,%f,%f)' % (vec.x, vec.y, vec.z)
+
 
 def get_cmd_info(cmd_info):
     i = 1
@@ -75,7 +74,7 @@ def frame_packet(body):
     print('Seq in: %d' % body.seq_in)
     print('Seq out: %d' % body.seq_out)
     print('Length: %d' % body.length)
-    parse_inner_packet(body.inner_packet)
+    parse_messages(body.messages.messages)
 
 def frame_synctick(body):
     print('[Frame::Synctick]')

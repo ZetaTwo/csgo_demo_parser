@@ -2,6 +2,8 @@ meta:
   id: dem
   file-extension: dem
   endian: le
+  imports:
+    - /common/vlq_base128_le
 
 seq:
   - id: header
@@ -12,7 +14,7 @@ seq:
     # repeat: eos
     # Used for speed
     repeat: expr
-    repeat-expr: 5000
+    repeat-expr: 40
 
 instances:
   max_splitscreen_clients:
@@ -115,8 +117,24 @@ types:
         type: s4
       - id: length
         type: s4
-      - id: inner_packet
+      - id: messages
+        type: message_list
         size: length
+
+  message_list:
+    seq:
+      - id: messages
+        type: message
+        repeat: eos
+
+  message:
+    seq:
+      - id: msg_type_id
+        type: vlq_base128_le
+      - id: length
+        type: vlq_base128_le
+      - id: body
+        size: length.value
 
   democmdinfo_t:
     seq:
