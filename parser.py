@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-from protobuf_parser import cstrike15_usermessages_public_pb2
+from protobuf_parser import cstrike15_usermessages_public_pb2, netmessages_public_pb2
+from google.protobuf.internal.decoder import _DecodeVarint32
+
 from kaitai_parser.dem import Dem
 
 g = Dem.from_file("samples/match730_003307379157293334783_1459413497_187.dem")
@@ -18,25 +20,78 @@ print('Tickrate: %d' % g.header.tickrate)
 print('Frames: %d' % g.header.frames)
 print('Sign-on length: %d' % g.header.signon_length)
 
+
+def get_message_type(msg_type):
+    if msg_type in netmessages_public_pb2.NET_Messages.values():
+        return netmessages_public_pb2.NET_Messages.Name(msg_type)
+    elif msg_type in netmessages_public_pb2.SVC_Messages.values():
+        return netmessages_public_pb2.SVC_Messages.Name(msg_type)
+    else:
+        return 'net_???'
+
+
+def parse_inner_packet(inner_body):
+    n = 0
+    while n < len(inner_body):
+        msg_type, n = _DecodeVarint32(inner_body, n)
+        length, n = _DecodeVarint32(inner_body, n)
+        msg_type_name = get_message_type(msg_type)
+        print('CMD: %d = %s' % (msg_type, msg_type_name))
+        msg_body = inner_body[n:n+length]
+        print(msg_body.encode('hex'))
+        n += length
+        
+
 def frame_packet(body):
     print('[Frame::Packet]')
     print(body.cmd_info)
-    print(body.seq_in)
-    print(body.seq_out)
-    print(body.length)
-    #print(body.inner_packet.encode('hex')) # TODO: Parse with protobuf
-    print(body)
+    print('Seq in: %d' % body.seq_in)
+    print('Seq out: %d' % body.seq_out)
+    print('Length: %d' % body.length)
+    parse_inner_packet(body.inner_packet)
 
+def frame_synctick(body):
+    print('[Frame::Synctick]')
+    pass
+
+def frame_console_cmd(body):
+    print('[Frame::ConsoleCmd]')
+    pass
+
+def frame_usercmd(body):
+    print('[Frame::UserCmd]')
+    pass
+
+def frame_datatables(body):
+    print('[Frame::DataTables]')
+    pass
+
+def frame_stringtables(body):
+    print('[Frame::StringTables]')
+    pass
+
+def frame_stop(body):
+    print('[Frame::Stop]')
+    pass
 
 frame_parsers = {
-    Dem.FrameType.dem_packet: frame_packet
+    Dem.FrameType.dem_signon: frame_packet,
+    Dem.FrameType.dem_packet: frame_packet,
+    Dem.FrameType.dem_synctick: frame_synctick,
+    Dem.FrameType.dem_consolecmd: frame_console_cmd,
+    Dem.FrameType.dem_usercmd: frame_usercmd,
+    Dem.FrameType.dem_datatables: frame_datatables,
+    Dem.FrameType.dem_stringtables: frame_stringtables,
+    Dem.FrameType.dem_stop: frame_stop,
+    Dem.FrameType.dem_customdata: False # TODO
 }
+
 
 for frame in g.frames:
     print('[Frame]')
-    print(frame.frame_type)
-    print(frame.tick)
-    print(frame.player_slot)
+    print('Frame type: %s' % frame.frame_type)
+    print('Tick: %d' % frame.tick)
+    print('Player slot: %d' % frame.player_slot)
     if frame.frame_type in frame_parsers:
         frame_parsers[frame.frame_type](frame.body)
     print('')
