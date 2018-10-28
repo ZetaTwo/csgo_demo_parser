@@ -12,7 +12,7 @@ seq:
     # repeat: eos
     # Used for speed
     repeat: expr
-    repeat-expr: 40
+    repeat-expr: 5000
 
 instances:
   max_splitscreen_clients:

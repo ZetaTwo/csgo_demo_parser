@@ -55,11 +55,23 @@ def parse_inner_packet(inner_body):
             print(msg_type)
 
         n += length
-        
+
+def vector_to_str(vec):
+    return '(%f,%f,%f)' % (vec.x, vec.y, vec.z)
+
+def get_cmd_info(cmd_info):
+    i = 1
+    res = []
+    for u in cmd_info.user:
+        vectors = [vector_to_str(x) for x in [u.view_origin, u.view_angles, u.local_view_angles, u.view_origin2, u.view_angles2, u.local_view_angles2]]
+        res.append('Player %d, [%d] %s,%s,%s,%s,%s,%s' % tuple([i, u.flags] + vectors))
+        i += 1
+    return '\n'.join(res)
+
 
 def frame_packet(body):
     print('[Frame::Packet]')
-    print(body.cmd_info)
+    print(get_cmd_info(body.cmd_info))
     print('Seq in: %d' % body.seq_in)
     print('Seq out: %d' % body.seq_out)
     print('Length: %d' % body.length)
