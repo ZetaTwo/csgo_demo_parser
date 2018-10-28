@@ -12,6 +12,14 @@ Run install.sh or perform the equivalent actions:
 3. Install protobuf compiler
 4. Get the protobuf definitions from the [Valve demo parser](https://github.com/ValveSoftware/csgo-demoinfo.git).
 
+## Build
+
+Run compile.sh or perform the equivalent actions:
+
+1. Compile the Valve protobuf specifications to parsers in your desired language
+2. Compile the csgodem.ksy kaitai specifications into parsers in your desired language
+
 ## Usage
 
 For example of how to use this, check the demo content dumper in parser.py
+Basically, you parse the demo file with the Kaitai parser and then use the protobuf varint decoder to iterate over (type,size) pairs of frame.body.inner_packet and then parse those chunks with the protobuf parsers.
