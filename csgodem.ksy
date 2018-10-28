@@ -14,7 +14,7 @@ seq:
     # repeat: eos
     # Used for speed
     repeat: expr
-    repeat-expr: 40
+    repeat-expr: 200
 
 instances:
   max_splitscreen_clients:
@@ -87,7 +87,7 @@ types:
     seq:
       - id: length
         type: s4
-      - id: cmd
+      - id: console_cmd
         size: length
   frame_datatables:
     seq:
@@ -100,12 +100,13 @@ types:
       - id: length
         type: s4
       - id: string_table
+        type: string_table
         size: length
   frame_usercmd:
     seq:
       - id: length
         type: s4
-      - id: string_table
+      - id: user_cmd
         size: length
   frame_packet:
     seq:
@@ -120,6 +121,28 @@ types:
       - id: messages
         type: message_list
         size: length
+
+  string_tables:
+    seq:
+      - id: num_tables
+        type: u1
+      - id: tables
+        type: string_table
+        repeat: expr
+        repeat-expr: num_tables
+
+  string_table:
+    seq:
+        - id: tablename
+          type: strz
+          encoding: ascii
+        - id: num_strings
+          type: s2
+        - id: strings
+          type: strz
+          encoding: ascii
+          repeat: expr
+          repeat-expr: num_strings
 
   message_list:
     seq:

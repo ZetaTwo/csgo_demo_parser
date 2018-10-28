@@ -21,10 +21,24 @@ print('Tickrate: %d' % g.header.tickrate)
 print('Frames: %d' % g.header.frames)
 print('Sign-on length: %d' % g.header.signon_length)
 
+string_tables = []
+
+def parse_string_updates(string_updates):
+    print(repr(string_updates))
+    pass # TODO
+
+def handle_CreateStringTable(msg_create_string_table):
+    parse_string_updates(msg_create_string_table.string_data)
+    0/0
+    pass # TODO: Parse StringTable entries
 
 message_type_prefixes = {
     'svc': 'CSVCMsg',
     'net': 'CNETMsg',
+}
+
+special_parsers = {
+    'svc_CreateStringTable': handle_CreateStringTable
 }
 
 def get_message_type(msg_type_name):
@@ -53,6 +67,8 @@ def parse_messages(messages):
             msg_type.ParseFromString(m.body)
             print('[Frame::Packet::Message::%s]' % msg_type_name)
             print(msg_type)
+            if msg_type_name in special_parsers:
+                special_parsers[msg_type_name](msg_type)
 
 def vector_to_str(vec):
     return '(%f,%f,%f)' % (vec.x, vec.y, vec.z)
@@ -77,28 +93,28 @@ def frame_packet(body):
     parse_messages(body.messages.messages)
 
 def frame_synctick(body):
+    """Sync tick frame, no further content"""
     print('[Frame::Synctick]')
-    pass
 
 def frame_console_cmd(body):
     print('[Frame::ConsoleCmd]')
-    pass
+    # TODO
 
 def frame_usercmd(body):
     print('[Frame::UserCmd]')
-    pass
+    # TODO
 
 def frame_datatables(body):
     print('[Frame::DataTables]')
-    pass
+    # TODO
 
 def frame_stringtables(body):
     print('[Frame::StringTables]')
-    pass
+    # TODO
 
 def frame_stop(body):
+    """Stop frame, no further content"""
     print('[Frame::Stop]')
-    pass
 
 frame_parsers = {
     Dem.FrameType.dem_signon: frame_packet,
