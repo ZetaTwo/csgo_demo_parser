@@ -1,25 +1,26 @@
 #!/usr/bin/env python
 
+from kaitaistruct import KaitaiStream
 #from protobuf_parser.cstrike15_usermessages_public_pb2 import
 from protobuf_parser.netmessages_public_pb2 import *
-from google.protobuf.internal.decoder import _DecodeVarint32
 
 from kaitai_parser.dem import Dem
 
-g = Dem.from_file("samples/match730_003307379157293334783_1459413497_187.dem")
+DEMO_PATH = "samples/match730_003307379157293334783_1459413497_187.dem"
 
-print('[Header]')
-print('Magic: %s' % g.header.magic)
-print('Demo version: %d' % g.header.demo_version)
-print('Network version: %d' % g.header.network_version)
-print('Server name: "%s"' % g.header.server_name)
-print('Client name: "%s"' % g.header.client_name)
-print('Map name: "%s"' % g.header.map_name)
-print('Playback time: %f' % g.header.playback_time)
-print('Ticks: %d' % g.header.ticks)
-print('Tickrate: %d' % g.header.tickrate)
-print('Frames: %d' % g.header.frames)
-print('Sign-on length: %d' % g.header.signon_length)
+def print_demo_header(header):
+    print('[Header]')
+    print('Magic: %s' % header.magic)
+    print('Demo version: %d' % header.demo_version)
+    print('Network version: %d' % header.network_version)
+    print('Server name: "%s"' % header.server_name)
+    print('Client name: "%s"' % header.client_name)
+    print('Map name: "%s"' % header.map_name)
+    print('Playback time: %f' % header.playback_time)
+    print('Ticks: %d' % header.ticks)
+    print('Tickrate: %d' % header.tickrate)
+    print('Frames: %d' % header.frames)
+    print('Sign-on length: %d' % header.signon_length)
 
 string_tables = []
 
@@ -29,8 +30,10 @@ def parse_string_updates(string_updates):
 
 def handle_CreateStringTable(msg_create_string_table):
     parse_string_updates(msg_create_string_table.string_data)
-    0/0
     pass # TODO: Parse StringTable entries
+
+def handle_PacketEntities(msg_packet_entities):
+    print(msg_packet_entities)
 
 message_type_prefixes = {
     'svc': 'CSVCMsg',
@@ -38,7 +41,8 @@ message_type_prefixes = {
 }
 
 special_parsers = {
-    'svc_CreateStringTable': handle_CreateStringTable
+    'svc_CreateStringTable': handle_CreateStringTable,
+    'svc_PacketEntities': handle_PacketEntities,
 }
 
 def get_message_type(msg_type_name):
@@ -66,7 +70,7 @@ def parse_messages(messages):
             msg_type = get_message_type(msg_type_name)()
             msg_type.ParseFromString(m.body)
             print('[Frame::Packet::Message::%s]' % msg_type_name)
-            print(msg_type)
+            #print(msg_type)
             if msg_type_name in special_parsers:
                 special_parsers[msg_type_name](msg_type)
 
@@ -116,20 +120,7 @@ def frame_stop(body):
     """Stop frame, no further content"""
     print('[Frame::Stop]')
 
-frame_parsers = {
-    Dem.FrameType.dem_signon: frame_packet,
-    Dem.FrameType.dem_packet: frame_packet,
-    Dem.FrameType.dem_synctick: frame_synctick,
-    Dem.FrameType.dem_consolecmd: frame_console_cmd,
-    Dem.FrameType.dem_usercmd: frame_usercmd,
-    Dem.FrameType.dem_datatables: frame_datatables,
-    Dem.FrameType.dem_stringtables: frame_stringtables,
-    Dem.FrameType.dem_stop: frame_stop,
-    Dem.FrameType.dem_customdata: False # TODO
-}
-
-
-for frame in g.frames:
+def print_frame(frame):
     print('[Frame]')
     print('Frame type: %s' % frame.frame_type)
     print('Tick: %d' % frame.tick)
@@ -137,3 +128,39 @@ for frame in g.frames:
     if frame.frame_type in frame_parsers:
         frame_parsers[frame.frame_type](frame.body)
     print('')
+
+
+frame_parsers = {
+    Dem.Frame.FrameType.dem_signon: frame_packet,
+    Dem.Frame.FrameType.dem_packet: frame_packet,
+    Dem.Frame.FrameType.dem_synctick: frame_synctick,
+    Dem.Frame.FrameType.dem_consolecmd: frame_console_cmd,
+    Dem.Frame.FrameType.dem_usercmd: frame_usercmd,
+    Dem.Frame.FrameType.dem_datatables: frame_datatables,
+    Dem.Frame.FrameType.dem_stringtables: frame_stringtables,
+    Dem.Frame.FrameType.dem_stop: frame_stop,
+    Dem.Frame.FrameType.dem_customdata: False # TODO
+}
+
+
+def main_streaming():
+    with open(DEMO_PATH, 'rb') as f:
+        stream = KaitaiStream(f)
+        header = Dem.Header(stream)
+        print_demo_header(header)
+        i = 0
+        while not stream.is_eof():
+            frame = Dem.Frame(stream, _root=Dem)
+            i += 1
+            #print_frame(frame)
+            if frame.frame_type in [Dem.Frame.FrameType.dem_signon, Dem.Frame.FrameType.dem_packet]:
+                parse_messages(frame.body.messages.messages)
+
+def main():
+    # Non-streaming
+    g = Dem.from_file(DEMO_PATH)
+    print_demo_header(g.header)
+    for frame in g.frames:
+        print_frame(frame)
+
+main_streaming()
