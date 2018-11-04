@@ -13,7 +13,8 @@ Run install.sh or perform the equivalent actions:
 2. Install Kaitai runtime for the language of your choice
 3. Get the Kaitai format gallery: https://github.com/kaitai-io/kaitai_struct_formats.git
 4. Install protobuf compiler
-5. Get the protobuf definitions from the [Valve demo parser](https://github.com/ValveSoftware/csgo-demoinfo.git).
+5. --Get the protobuf definitions from the [Valve demo parser](https://github.com/ValveSoftware/csgo-demoinfo.git).--
+6. Get the protobuf definitions from the Linux fork of the [Valve demo parser](https://github.com/kaimallea/demoinfogo-linux).
 
 ## Build
 

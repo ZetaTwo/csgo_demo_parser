@@ -5,10 +5,9 @@ sudo apt-get install protobuf-compiler libprotobuf-dev
 
 # Download protobuf specs
 mkdir -p protobuf_parser kaitai_parser
-git clone https://github.com/ValveSoftware/csgo-demoinfo.git
-cp csgo-demoinfo/demoinfogo/cstrike15_usermessages_public.proto protobuf
-cp csgo-demoinfo/demoinfogo/netmessages_public.proto protobuf
-rm -rf csgo-demoinfo
+git clone https://github.com/kaimallea/demoinfogo-linux
+cp demoinfogo-linux/src/*.proto protobuf
+rm -rf demoinfogo-linux
 
 # Install kaitai
 sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv 379CE192D401AB61
