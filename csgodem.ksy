@@ -10,15 +10,7 @@ seq:
     type: header
   - id: frames
     type: frame
-    # TODO: switch to this in prod
-    # repeat: eos
-    # Used for speed
-    repeat: expr
-    repeat-expr: 200
-
-instances:
-  max_splitscreen_clients:
-    value: 2
+    repeat: eos
 
 types:
   header:
@@ -78,150 +70,160 @@ types:
             'frame_type::dem_stop': frame_stop
             # TODO: 'frame_type::dem_customdata': u1
             'frame_type::dem_stringtables': frame_stringtables
-            
-  frame_synctick:
-    doc: Sync tick
-  frame_stop:
-    doc: Stop tick
-  frame_console_cmd:
-    seq:
-      - id: length
-        type: s4
-      - id: console_cmd
-        size: length
-  frame_datatables:
-    seq:
-      - id: length
-        type: s4
-      - id: data_table
-        size: length
-  frame_stringtables:
-    seq:
-      - id: length
-        type: s4
-      - id: string_table
-        type: string_table
-        size: length
-  frame_usercmd:
-    seq:
-      - id: length
-        type: s4
-      - id: user_cmd
-        size: length
-  frame_packet:
-    seq:
-      - id: cmd_info
-        type: democmdinfo_t
-      - id: seq_in
-        type: s4
-      - id: seq_out
-        type: s4
-      - id: length
-        type: s4
-      - id: messages
-        type: message_list
-        size: length
+    enums:
+      frame_type:
+        # it's a startup message, process as fast as possible
+        1: dem_signon
+        # it's a normal network packet that we stored off
+        2: dem_packet
+        # sync client clock to demo tick
+        3: dem_synctick
+        # console command
+        4: dem_consolecmd
+        # user input command
+        5: dem_usercmd
+        # network data tables
+        6: dem_datatables
+        # end of time.
+        7: dem_stop
+        # a blob of binary data understood by a callback function
+        8: dem_customdata
+        9: dem_stringtables
 
-  string_tables:
-    seq:
-      - id: num_tables
-        type: u1
-      - id: tables
-        type: string_table
-        repeat: expr
-        repeat-expr: num_tables
+        # Last command
+        #9: dem_lastcmd = dem_stringtables
 
-  string_table:
-    seq:
-        - id: tablename
-          type: strz
-          encoding: ascii
-        - id: num_strings
-          type: s2
-        - id: strings
-          type: strz
-          encoding: ascii
-          repeat: expr
-          repeat-expr: num_strings
+    types:
+      frame_synctick:
+        doc: Sync tick
+      frame_stop:
+        doc: Stop tick
+      frame_console_cmd:
+        seq:
+          - id: length
+            type: s4
+          - id: console_cmd
+            size: length
+      frame_datatables:
+        seq:
+          - id: length
+            type: s4
+          - id: data_table
+            size: length
+      frame_stringtables:
+        seq:
+          - id: length
+            type: s4
+          - id: string_table
+            type: string_tables
+            size: length
 
-  message_list:
-    seq:
-      - id: messages
-        type: message
-        repeat: eos
+        types:
+          string_tables:
+            seq:
+              - id: num_tables
+                type: u1
+              - id: tables
+                type: string_table
+                repeat: expr
+                repeat-expr: num_tables
 
-  message:
-    seq:
-      - id: msg_type_id
-        type: vlq_base128_le
-      - id: length
-        type: vlq_base128_le
-      - id: body
-        size: length.value
+            types:
+              string_table:
+                seq:
+                  - id: tablename
+                    type: strz
+                    encoding: ascii
+                  - id: num_strings
+                    type: s2
+                  - id: strings
+                    type: strz
+                    encoding: ascii
+                    repeat: expr
+                    repeat-expr: num_strings
+      frame_usercmd:
+        seq:
+          - id: length
+            type: s4
+          - id: user_cmd
+            size: length
+      frame_packet:
+        seq:
+          - id: cmd_info
+            type: democmdinfo_t
+          - id: seq_in
+            type: s4
+          - id: seq_out
+            type: s4
+          - id: length
+            type: s4
+          - id: messages
+            type: message_list
+            size: length
 
-  democmdinfo_t:
-    seq:
-      - id: user
-        type: split_t
-        repeat: expr
-        repeat-expr: _root.max_splitscreen_clients
+        types:
+          democmdinfo_t:
+            seq:
+              - id: user
+                type: split_t
+                repeat: expr
+                repeat-expr: max_splitscreen_clients
 
-  split_t:
-    seq:
-      # TODO: add derived flag values
-      - id: flags
-        type: s4
-      # Original origin/viewangles
-      - id: view_origin
-        type: vector
-      - id: view_angles
-        type: qangle
-      - id: local_view_angles
-        type: qangle
-      # Resampled origin/viewangles
-      - id: view_origin2
-        type: vector
-      - id: view_angles2
-        type: qangle
-      - id: local_view_angles2
-        type: qangle
-    
-  vector:
-    seq:
-      - id: x
-        type: f4
-      - id: y
-        type: f4
-      - id: z
-        type: f4
-  qangle:
-    seq:
-      - id: x
-        type: f4
-      - id: y
-        type: f4
-      - id: z
-        type: f4
+            instances:
+              max_splitscreen_clients:
+                value: 2
 
-enums:
-  frame_type:
-    # it's a startup message, process as fast as possible
-    1: dem_signon
-    # it's a normal network packet that we stored off
-    2: dem_packet
-    # sync client clock to demo tick
-    3: dem_synctick
-    # console command
-    4: dem_consolecmd
-    # user input command
-    5: dem_usercmd
-    # network data tables
-    6: dem_datatables
-    # end of time.
-    7: dem_stop
-    # a blob of binary data understood by a callback function
-    8: dem_customdata
-    9: dem_stringtables
+            types:
+              split_t:
+                seq:
+                  # TODO: add derived flag values
+                  - id: flags
+                    type: s4
+                  # Original origin/viewangles
+                  - id: view_origin
+                    type: vector
+                  - id: view_angles
+                    type: qangle
+                  - id: local_view_angles
+                    type: qangle
+                  # Resampled origin/viewangles
+                  - id: view_origin2
+                    type: vector
+                  - id: view_angles2
+                    type: qangle
+                  - id: local_view_angles2
+                    type: qangle
 
-    # Last command
-    #9: dem_lastcmd = dem_stringtables
+                types:
+                  vector:
+                    seq:
+                      - id: x
+                        type: f4
+                      - id: y
+                        type: f4
+                      - id: z
+                        type: f4
+                  qangle:
+                    seq:
+                      - id: x
+                        type: f4
+                      - id: y
+                        type: f4
+                      - id: z
+                        type: f4
+
+          message_list:
+            seq:
+              - id: messages
+                type: message
+                repeat: eos
+
+            types:
+              message:
+                seq:
+                  - id: msg_type_id
+                    type: vlq_base128_le
+                  - id: length
+                    type: vlq_base128_le
+                  - id: body
+                    size: length.value
