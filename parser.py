@@ -67,6 +67,7 @@ def parse_messages(messages):
         if not msg_type_name:
             print('[Frame::Packet::Message::???]')
             print('ID: %d' % msg_type_id)
+            raise ValueError("Unknown message type: %d" % msg_type_id)
         else:
             msg_type = get_message_type(msg_type_name)()
             msg_type.ParseFromString(m.body)
