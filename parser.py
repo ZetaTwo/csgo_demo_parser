@@ -5,6 +5,7 @@ from kaitaistruct import KaitaiStream
 from protobuf_parser.netmessages_public_pb2 import *
 
 from kaitai_parser.dem import Dem
+from kaitai_parser.frame import Frame
 
 DEMO_PATH = "samples/match730_003307379157293334783_1459413497_187.dem"
 
@@ -131,15 +132,15 @@ def print_frame(frame):
 
 
 frame_parsers = {
-    Dem.Frame.FrameType.dem_signon: frame_packet,
-    Dem.Frame.FrameType.dem_packet: frame_packet,
-    Dem.Frame.FrameType.dem_synctick: frame_synctick,
-    Dem.Frame.FrameType.dem_consolecmd: frame_console_cmd,
-    Dem.Frame.FrameType.dem_usercmd: frame_usercmd,
-    Dem.Frame.FrameType.dem_datatables: frame_datatables,
-    Dem.Frame.FrameType.dem_stringtables: frame_stringtables,
-    Dem.Frame.FrameType.dem_stop: frame_stop,
-    Dem.Frame.FrameType.dem_customdata: False # TODO
+    Frame.FrameType.dem_signon: frame_packet,
+    Frame.FrameType.dem_packet: frame_packet,
+    Frame.FrameType.dem_synctick: frame_synctick,
+    Frame.FrameType.dem_consolecmd: frame_console_cmd,
+    Frame.FrameType.dem_usercmd: frame_usercmd,
+    Frame.FrameType.dem_datatables: frame_datatables,
+    Frame.FrameType.dem_stringtables: frame_stringtables,
+    Frame.FrameType.dem_stop: frame_stop,
+    Frame.FrameType.dem_customdata: False # TODO
 }
 
 
@@ -150,10 +151,10 @@ def main_streaming():
         print_demo_header(header)
         i = 0
         while not stream.is_eof():
-            frame = Dem.Frame(stream, _root=Dem)
+            frame = Frame(stream)
             i += 1
             #print_frame(frame)
-            if frame.frame_type in [Dem.Frame.FrameType.dem_signon, Dem.Frame.FrameType.dem_packet]:
+            if frame.frame_type in [Frame.FrameType.dem_signon, Frame.FrameType.dem_packet]:
                 parse_messages(frame.body.messages.messages)
 
 def main():
