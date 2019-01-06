@@ -11,7 +11,8 @@ sed -i 's/self.nbytes_data = self._io.read_bits_int(14)/self.nbytes_data = int(f
 sed -i 's/self.history_index = self._io.read_bits_int(5)/self.history_index = int(format(self._io.read_bits_int(5), "05b")[::-1], 2)/g' kaitai_parser/string_table_update.py
 sed -i 's/self.bytestocopy = self._io.read_bits_int(5)/self.bytestocopy = int(format(self._io.read_bits_int(5), "05b")[::-1], 2)/g' kaitai_parser/string_table_update.py
 
-
+# Work-around for dynamic variable size in Kaitai until ???
+sed -i 's/self.tempbuf2 = self._io.read_bits_int(1337)/self.tempbuf2 = self._io.read_bits_int(self.user_data_size_bits)/g' kaitai_parser/string_table_update.py
 
 # Visualize:
 # ksv samples/match730_003307379157293334783_1459413497_187.dem csgodem.ksy

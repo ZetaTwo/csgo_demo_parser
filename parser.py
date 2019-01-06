@@ -78,9 +78,10 @@ def parse_string_updates(string_updates, user_data_fixed_size, user_data_size_bi
             print('User data fixed size: %s' % user_data_fixed_size)
             if user_data_fixed_size:
                 print('User data size bits: %d' % user_data_size_bits)
+                print('String: %s' % entry.tempbuf2)
             else:
                 print('User data size bytes: %d' % entry.nbytes)
-            print('String: %s' % entry.tempbuf)
+                print('String: %s' % entry.tempbuf)
 
         while len(history) > 31:
             history = history[1:]
@@ -137,7 +138,6 @@ def parse_messages(messages):
             raise ValueError("Unknown message type: %d" % msg_type_id)
         else:
             msg_type = get_message_type(msg_type_name)()
-            #dump_protobuf_pairs(m.body_parsed) # TESTING: Kaitai parsing instead of protobuf
             msg_type.ParseFromString(m.body)
             print('[Frame::Packet::Message::%s]' % msg_type_name)
             if msg_type_name in message_parsers:

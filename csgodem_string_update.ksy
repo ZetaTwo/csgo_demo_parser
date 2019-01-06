@@ -28,8 +28,8 @@ seq:
     type:
       switch-on: encode_using_dictionaries
       cases:
-        true: string_table_update_entries_dict
-        false: string_table_update_entries(user_data_fixed_size, user_data_size_bits, user_data_size, max_entries)
+        true: string_table_update_entry_dict
+        false: string_table_update_entry(user_data_fixed_size, user_data_size_bits, user_data_size, max_entries)
 
 instances:
   substring_bits:
@@ -38,7 +38,7 @@ instances:
     value: 14 
 
 types:
-  string_table_update_entries:
+  string_table_update_entry:
     params:
       # int entries
       # int nMaxEntries
@@ -113,9 +113,12 @@ types:
         repeat: expr
         repeat-expr: nbytes
         type: b8
-        if: flag2 == true
+        if: flag2 == true and user_data_fixed_size == false
+      - id: tempbuf2
+        type: b1337
+        if: flag2 == true and user_data_fixed_size == true
 
-  string_table_update_entries_dict:
+  string_table_update_entry_dict:
     doc: dummy
     seq:
      - id: data
