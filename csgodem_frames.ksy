@@ -52,20 +52,25 @@ enums:
 types:
   frame_synctick:
     doc: Sync tick
+
   frame_stop:
     doc: Stop tick
+
   frame_console_cmd:
     seq:
       - id: length
         type: s4
       - id: console_cmd
         size: length
+
+  # demofiledump.cpp:1450
   frame_datatables:
     seq:
       - id: length
         type: s4
       - id: data_table
         size: length
+
   frame_stringtables:
     seq:
       - id: length
@@ -97,12 +102,14 @@ types:
                 encoding: ascii
                 repeat: expr
                 repeat-expr: num_strings
+
   frame_usercmd:
     seq:
       - id: length
         type: s4
       - id: user_cmd
         size: length
+
   frame_packet:
     seq:
       - id: cmd_info

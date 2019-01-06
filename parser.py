@@ -181,6 +181,7 @@ def frame_usercmd(body):
 
 def frame_datatables(body):
     print('[Frame::DataTables]')
+    print(body.data_table)
     raise NotImplementedError("DataTables not parsed")
     # TODO
 
