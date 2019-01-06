@@ -5,6 +5,16 @@ It uses a combination of [Kaitai](https://kaitai.io/) and [protobuf](https://dev
 
 Some basic info on the demo format: https://developer.valvesoftware.com/wiki/DEM_Format
 
+## Project status
+
+This library is not fully functional yet. Initially the goal was to write a parser based purely on Kaitai Struct and Protobuf to make it portable.
+It turned out, due to how the demo file format is structured, that this is not really currently feasible.
+
+Instead, the idea is to create a parser and tool in one language, currently python, to convert the demos into a different, more consistently structured format.
+This format will possibly be based on protobuf. Then that file fromat will be much to parse in any protobuf supported language of choice.
+
+Currently, I'm still implementing parsing for all frames and messages.
+
 ## Install
 
 Run install.sh or perform the equivalent actions:
