@@ -1,13 +1,25 @@
 #!/usr/bin/env python
 
 from kaitaistruct import KaitaiStream
+from io import BytesIO
 #from protobuf_parser.cstrike15_usermessages_public_pb2 import
 from protobuf_parser.netmessages_public_pb2 import *
+import math
 
 from kaitai_parser.dem import Dem
 from kaitai_parser.frame import Frame
+from kaitai_parser.string_table_update import StringTableUpdate
 
 DEMO_PATH = "samples/match730_003307379157293334783_1459413497_187.dem"
+
+
+def reverse_mask(b):
+    return (b * 0x0202020202 & 0x010884422010) % 1023
+
+assert(reverse_mask(0b10100011) == 0b11000101)
+
+def flip_bytes(data):
+    return ''.join([chr(reverse_mask(ord(x))) for x in data])
 
 def print_demo_header(header):
     print('[Header]')
@@ -25,23 +37,85 @@ def print_demo_header(header):
 
 string_tables = []
 
-def parse_string_updates(string_updates):
-    print(repr(string_updates))
-    pass # TODO
+def parse_string_updates(string_updates, user_data_fixed_size, user_data_size_bits, user_data_size, max_entries):
+    flipped = flip_bytes(string_updates)
+    #flipped = flipped[0] + flipped
+    entry_bits = int(math.log(max_entries,2))
+    print('Entry bits: %d' % entry_bits)
+    print(','.join([format(ord(x), '08b') for x in flipped]))
+    parsed_updates = StringTableUpdate(user_data_fixed_size, user_data_size_bits, user_data_size, entry_bits, KaitaiStream(BytesIO(flipped)))
+    print('[StringTableUpdate]')
+    print('Encoded using dictionaries: %s' % parsed_updates.encode_using_dictionaries)
+    print('')
+
+    if parsed_updates.encode_using_dictionaries:
+        0/0
+        return
+
+    history = []
+    last_index = -1
+
+    for entry in parsed_updates.entries:
+        entry_str = ""
+        entry_index = last_index + 1
+        print('Same index: %s' % entry.same_index)
+        
+        if not entry.same_index:
+            print('New index: %d' % entry.new_index)
+            entry_index = entry.new_index
+        last_index = entry_index
+
+        print('Flag 1: %s' % entry.flag1)
+        if entry.flag1:
+            print('Substring: %s' % entry.substring_check)
+            if entry.substring_check:
+                print('History index: %d' % entry.history_index)
+                print('Bytes to copy: %d' % entry.bytestocopy)
+                entry_str += history[entry.history_index][:entry.bytestocopy]
+            entry_str += ''.join([chr(x) for x in entry.entry])
+            print('Entry string: %s' % repr(entry_str))
+
+        
+        print('Flag 2: %s' % entry.flag2)
+        if entry.flag2:
+            print('User data fixed size: %s' % user_data_fixed_size)
+            if user_data_fixed_size:
+                print('User data size bits: %d' % user_data_size_bits)
+            else:
+                print('User data size bytes: %d' % entry.nbytes)
+            print('String: %d' % entry.nbytes)
+
+
+        history.append(entry_str)
+        print(len(history))
+        while len(history) > 31:
+            history = history[1:]
+
+        #break
+    print(len(parsed_updates.entries))
+
+    #KaitaiStream()
+    #for entry in stream = 
+
+    raise NotImplementedError("String table update non-dict")
+
+
+    
 
 def handle_CreateStringTable(msg_create_string_table):
-    parse_string_updates(msg_create_string_table.string_data)
-    pass # TODO: Parse StringTable entries
+    print(msg_create_string_table) # Debug print
+    parse_string_updates(msg_create_string_table.string_data, msg_create_string_table.user_data_fixed_size, msg_create_string_table.user_data_size_bits, msg_create_string_table.user_data_size, msg_create_string_table.max_entries)
 
 def handle_PacketEntities(msg_packet_entities):
     print(msg_packet_entities)
+    raise NotImplementedError("PacketEntities not parsed")
 
 message_type_prefixes = {
     'svc': 'CSVCMsg',
     'net': 'CNETMsg',
 }
 
-special_parsers = {
+message_parsers = {
     'svc_CreateStringTable': handle_CreateStringTable,
     'svc_PacketEntities': handle_PacketEntities,
 }
@@ -60,6 +134,13 @@ def get_message_type_name(msg_type_id):
         return False
 
 
+def dump_protobuf_pairs(body):
+    for p in body.pairs:
+        key = p.key.value
+        field_tag = key >> 3
+        wire_tag = key & 0b111
+        print(field_tag, wire_tag, p.value)
+
 def parse_messages(messages):
     for m in messages:
         msg_type_id = m.msg_type_id.value
@@ -70,23 +151,23 @@ def parse_messages(messages):
             raise ValueError("Unknown message type: %d" % msg_type_id)
         else:
             msg_type = get_message_type(msg_type_name)()
+            #dump_protobuf_pairs(m.body_parsed) # TESTING: Kaitai parsing instead of protobuf
             msg_type.ParseFromString(m.body)
             print('[Frame::Packet::Message::%s]' % msg_type_name)
-            #print(msg_type)
-            if msg_type_name in special_parsers:
-                special_parsers[msg_type_name](msg_type)
+            if msg_type_name in message_parsers:
+                message_parsers[msg_type_name](msg_type)
 
 def vector_to_str(vec):
     return '(%f,%f,%f)' % (vec.x, vec.y, vec.z)
 
 
 def get_cmd_info(cmd_info):
-    i = 1
+    player_id = 1
     res = []
     for u in cmd_info.user:
         vectors = [vector_to_str(x) for x in [u.view_origin, u.view_angles, u.local_view_angles, u.view_origin2, u.view_angles2, u.local_view_angles2]]
-        res.append('Player %d, [%d] %s,%s,%s,%s,%s,%s' % tuple([i, u.flags] + vectors))
-        i += 1
+        res.append('Player %d, [%d] %s,%s,%s,%s,%s,%s' % tuple([player_id, u.flags] + vectors))
+        player_id += 1
     return '\n'.join(res)
 
 
@@ -104,18 +185,22 @@ def frame_synctick(body):
 
 def frame_console_cmd(body):
     print('[Frame::ConsoleCmd]')
+    raise NotImplementedError("ConsoleCmd not parsed")
     # TODO
 
 def frame_usercmd(body):
     print('[Frame::UserCmd]')
+    raise NotImplementedError("UserCmd not parsed")
     # TODO
 
 def frame_datatables(body):
     print('[Frame::DataTables]')
+    raise NotImplementedError("DataTables not parsed")
     # TODO
 
 def frame_stringtables(body):
     print('[Frame::StringTables]')
+    raise NotImplementedError("StringTables not parsed")
     # TODO
 
 def frame_stop(body):
@@ -129,6 +214,8 @@ def print_frame(frame):
     print('Player slot: %d' % frame.player_slot)
     if frame.frame_type in frame_parsers:
         frame_parsers[frame.frame_type](frame.body)
+    else:
+        raise NotImplementedError("%s not parsed" % frame.frame_type)
     print('')
 
 
@@ -152,11 +239,19 @@ def main_streaming():
         print_demo_header(header)
         i = 0
         while not stream.is_eof():
+            if i == 2:
+                break
             frame = Frame(stream)
+            
             i += 1
-            #print_frame(frame)
-            if frame.frame_type in [Frame.FrameType.dem_signon, Frame.FrameType.dem_packet]:
-                parse_messages(frame.body.messages.messages)
+            
+            
+            print_frame(frame)
+            #if frame.frame_type in [Frame.FrameType.dem_signon, Frame.FrameType.dem_packet]:
+            #parse_messages(frame.body.messages.messages)
+            #    pass
+            #else:
+            #    print(frame.frame_type)
 
 def main():
     # Non-streaming
