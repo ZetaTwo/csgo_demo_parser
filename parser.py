@@ -39,18 +39,15 @@ string_tables = []
 
 def parse_string_updates(string_updates, user_data_fixed_size, user_data_size_bits, user_data_size, max_entries):
     flipped = flip_bytes(string_updates)
-    #flipped = flipped[0] + flipped
     entry_bits = int(math.log(max_entries,2))
     print('Entry bits: %d' % entry_bits)
-    print(','.join([format(ord(x), '08b') for x in flipped]))
     parsed_updates = StringTableUpdate(user_data_fixed_size, user_data_size_bits, user_data_size, entry_bits, KaitaiStream(BytesIO(flipped)))
     print('[StringTableUpdate]')
     print('Encoded using dictionaries: %s' % parsed_updates.encode_using_dictionaries)
     print('')
 
     if parsed_updates.encode_using_dictionaries:
-        0/0
-        return
+        raise NotImplementedError("String table update dict not implemented")
 
     history = []
     last_index = -1
@@ -61,8 +58,8 @@ def parse_string_updates(string_updates, user_data_fixed_size, user_data_size_bi
         print('Same index: %s' % entry.same_index)
         
         if not entry.same_index:
-            print('New index: %d' % entry.new_index)
             entry_index = entry.new_index
+        print('Index: %d' % entry_index)
         last_index = entry_index
 
         print('Flag 1: %s' % entry.flag1)
@@ -73,7 +70,7 @@ def parse_string_updates(string_updates, user_data_fixed_size, user_data_size_bi
                 print('Bytes to copy: %d' % entry.bytestocopy)
                 entry_str += history[entry.history_index][:entry.bytestocopy]
             entry_str += ''.join([chr(x) for x in entry.entry])
-            print('Entry string: %s' % repr(entry_str))
+            print('Entry string: %s' % repr(flip_bytes(entry_str)))
 
         
         print('Flag 2: %s' % entry.flag2)
@@ -83,24 +80,13 @@ def parse_string_updates(string_updates, user_data_fixed_size, user_data_size_bi
                 print('User data size bits: %d' % user_data_size_bits)
             else:
                 print('User data size bytes: %d' % entry.nbytes)
-            print('String: %d' % entry.nbytes)
+            print('String: %s' % entry.tempbuf)
 
-
-        history.append(entry_str)
-        print(len(history))
         while len(history) > 31:
             history = history[1:]
+        history.append(entry_str)
+        print('')
 
-        #break
-    print(len(parsed_updates.entries))
-
-    #KaitaiStream()
-    #for entry in stream = 
-
-    raise NotImplementedError("String table update non-dict")
-
-
-    
 
 def handle_CreateStringTable(msg_create_string_table):
     print(msg_create_string_table) # Debug print

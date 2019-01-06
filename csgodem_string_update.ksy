@@ -22,9 +22,9 @@ seq:
   - id: encode_using_dictionaries
     type: b1
   - id: entries
-    #repeat: eos
-    repeat: expr
-    repeat-expr: 50 # Debug
+    repeat: eos
+    #repeat: expr
+    #repeat-expr: 5 # Debug
     type:
       switch-on: encode_using_dictionaries
       cases:
@@ -110,10 +110,8 @@ types:
         type: b14 # max_userdata_bits
         if: flag2 == true and user_data_fixed_size == false
       - id: tempbuf
-        #size: nbytes
         repeat: expr
-        repeat-expr: 10
-        #repeat-expr: nbytes
+        repeat-expr: nbytes
         type: b8
         if: flag2 == true
 
